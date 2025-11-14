@@ -1,0 +1,226 @@
+# kube-prometheus-stack values for Talos Cluster
+# Full cluster monitoring with Grafana UI, Prometheus, and Alertmanager
+
+## Global settings
+fullnameOverride: "prometheus"
+
+## Alertmanager configuration
+alertmanager:
+  enabled: true
+  
+  alertmanagerSpec:
+    # Persistent storage for alert state
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: nfs-storage
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+    
+    # Resource limits
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+## Grafana configuration
+grafana:
+  enabled: true
+  
+  # Admin credentials
+  adminPassword: admin  # Change this after first login!
+  
+  # Expose Grafana via LoadBalancer
+  service:
+    type: LoadBalancer
+    port: 80
+    annotations: {}
+    # Optionally request specific IP:
+    # loadBalancerIP: "192.168.8.60"
+  
+  # Persistent storage for Grafana data
+  persistence:
+    enabled: true
+    storageClassName: nfs-storage
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+  
+  # Pre-configured datasources
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://prometheus-kube-prometheus-prometheus:9090
+          access: proxy
+          isDefault: true
+  
+  # Resource limits
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  
+  # Enable sidecar for auto-loading dashboards
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+    datasources:
+      enabled: true
+      label: grafana_datasource
+
+## Prometheus configuration
+prometheus:
+  enabled: true
+  
+  prometheusSpec:
+    # Retention period for metrics
+    retention: 30d
+    
+    # Persistent storage for metrics
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: nfs-storage
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 50Gi
+    
+    # Resource limits
+    resources:
+      requests:
+        cpu: 500m
+        memory: 2Gi
+      limits:
+        cpu: 1000m
+        memory: 4Gi
+    
+    # Scrape interval
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+    
+    # Monitor all ServiceMonitors/PodMonitors in any namespace
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    
+    # Enable features
+    enableAdminAPI: false
+    enableRemoteWriteReceiver: false
+
+## Prometheus Operator configuration
+prometheusOperator:
+  enabled: true
+  
+  # Resource limits
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  
+  # Admission webhooks (validates PrometheusRules)
+  admissionWebhooks:
+    enabled: true
+    patch:
+      enabled: true
+
+## Kube-State-Metrics configuration
+kubeStateMetrics:
+  enabled: true
+
+## Node Exporter configuration
+nodeExporter:
+  enabled: true
+  
+  # Run on all nodes including control plane
+  hostRootFsMount:
+    enabled: true
+    mountPropagation: HostToContainer
+
+## Kubernetes component monitoring
+kubeApiServer:
+  enabled: true
+
+kubelet:
+  enabled: true
+  
+  # Talos-specific: Enable cAdvisor metrics
+  serviceMonitor:
+    cAdvisor: true
+    probes: true
+    resource: true
+    resourcePath: "/metrics/resource"
+
+kubeControllerManager:
+  enabled: true
+  
+  # Talos exposes these on all nodes
+  endpoints:
+    - 192.168.8.176
+    - 192.168.8.177
+
+kubeScheduler:
+  enabled: true
+  
+  # Talos exposes these on all nodes
+  endpoints:
+    - 192.168.8.176
+    - 192.168.8.177
+
+kubeProxy:
+  enabled: true
+
+kubeEtcd:
+  enabled: true
+  
+  # Talos etcd endpoints
+  endpoints:
+    - 192.168.8.176
+    - 192.168.8.177
+
+coreDns:
+  enabled: true
+
+## Default rules and alerts
+defaultRules:
+  create: true
+  rules:
+    alertmanager: true
+    etcd: true
+    configReloaders: true
+    general: true
+    k8s: true
+    kubeApiserver: true
+    kubeApiserverAvailability: true
+    kubeApiserverSlos: true
+    kubelet: true
+    kubeProxy: true
+    kubePrometheusGeneral: true
+    kubePrometheusNodeRecording: true
+    kubernetesApps: true
+    kubernetesResources: true
+    kubernetesStorage: true
+    kubernetesSystem: true
+    kubeScheduler: true
+    kubeStateMetrics: true
+    network: true
+    node: true
+    nodeExporterAlerting: true
+    nodeExporterRecording: true
+    prometheus: true
+    prometheusOperator: true
+
