@@ -159,29 +159,53 @@ kubelet:
 kubeControllerManager:
   enabled: true
   
-  # Talos exposes these on all nodes
-  endpoints:
-    - 192.168.8.176
-    - 192.168.8.177
+  # Auto-discover via service in kube-system
+  service:
+    enabled: true
+    port: 10257
+    targetPort: 10257
+  
+  serviceMonitor:
+    enabled: true
+    https: true
+    insecureSkipVerify: true
 
 kubeScheduler:
   enabled: true
   
-  # Talos exposes these on all nodes
-  endpoints:
-    - 192.168.8.176
-    - 192.168.8.177
+  # Auto-discover via service in kube-system
+  service:
+    enabled: true
+    port: 10259
+    targetPort: 10259
+  
+  serviceMonitor:
+    enabled: true
+    https: true
+    insecureSkipVerify: true
 
 kubeProxy:
   enabled: true
+  
+  # Auto-discover via kube-proxy pods
+  service:
+    enabled: true
+    port: 10249
+    targetPort: 10249
 
 kubeEtcd:
   enabled: true
   
-  # Talos etcd endpoints
-  endpoints:
-    - 192.168.8.176
-    - 192.168.8.177
+  # Auto-discover etcd pods
+  service:
+    enabled: true
+    port: 2381
+    targetPort: 2381
+  
+  serviceMonitor:
+    enabled: true
+    scheme: https
+    insecureSkipVerify: true
 
 coreDns:
   enabled: true
